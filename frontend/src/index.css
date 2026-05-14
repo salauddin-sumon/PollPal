@@ -1,0 +1,21 @@
+/* Tailwind CSS directives */
+/* @import "tailwindcss" tells Vite to inject Tailwind's base styles, components, and utilities */
+@import "tailwindcss";
+
+/* Optional: Custom scrollbar for the neutral theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f9fafb; /* gray-50 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db; /* gray-300 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af; /* gray-400 */
+}
