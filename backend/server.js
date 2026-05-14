@@ -26,16 +26,51 @@ const app = express();
 // ======== MIDDLEWARE ========
 // cors() allows frontend to talk to backend
 // In development: http://localhost:5173
-// In production: your Vercel frontend URL
+// In production: allow Vercel deployments
+const isProduction = process.env.NODE_ENV === "production";
+
 const allowedOrigins = [
   "http://localhost:5173",  // Development
   "http://localhost:3000",  // Alternative dev
-  process.env.FRONTEND_URL  // Production (set in Render)
+  process.env.FRONTEND_URL,  // Production (set in Render)
 ].filter(Boolean);  // Remove undefined values
 
+// In production, also allow common Vercel domains
+if (isProduction) {
+  allowedOrigins.push(
+    "https://pollpal.vercel.app",
+    "https://pollpal-git-main.vercel.app"
+  );
+}
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true                // Allows cookies to be sent cross-origin
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // In development, allow all localhost origins
+    if (!isProduction && origin.startsWith('http://localhost')) {
+      return callback(null, true);
+    }
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel preview deployments (pollpal-*.vercel.app)
+    if (isProduction && origin && origin.match(/^https:\/\/pollpal-.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+
+    console.log('CORS blocked origin:', origin);
+    console.log('Allowed origins:', allowedOrigins);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,               // Allows cookies to be sent cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 // express.json() parses JSON bodies from POST/PUT requests
@@ -79,6 +114,17 @@ app.use((err, req, res, next) => {
 });
 
 // ======== DATABASE CONNECTION & SERVER START ========
+// const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB first, then start listening
+// connectDB().then(() => {
+//   app.listen(PORT, () => {
+//     console.log(`🚀 Server running on http://localhost:${PORT}`);
+//     // expirePolls();
+//   });
+// });
+
+// ======== DATABASE CONNECTION & SERVER START ========
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB first, then start listening
@@ -86,5 +132,12 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     expirePolls();
+  });
+}).catch((error) => {
+  console.error('❌ Database connection failed:', error.message);
+  console.log('🚀 Starting server without database connection for testing...');
+  // Start server even if DB fails
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT} (DB connection failed)`);
   });
 });

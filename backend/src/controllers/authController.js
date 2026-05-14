@@ -27,6 +27,8 @@ const asyncHandler = (fn) => (req, res, next) => {
 // @access  Public (anyone can register)
 // ============================================================
 const registerUser = asyncHandler(async (req, res) => {
+  console.log('Registration attempt:', req.body); // Debug log
+
   // --- STEP 1: Destructure the request body ---
   // req.body comes from express.json() middleware
   // The frontend sends: { username, email, password }
@@ -60,6 +62,8 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     password, // Plain text now, will be hashed by the model hook
   });
+
+  console.log('User created:', user._id); // Debug log
 
   // --- STEP 5: Success response ---
   if (user) {
@@ -97,6 +101,8 @@ const registerUser = asyncHandler(async (req, res) => {
 // @access  Public
 // ============================================================
 const loginUser = asyncHandler(async (req, res) => {
+  console.log('Login attempt:', req.body); // Debug log
+
   // --- STEP 1: Destructure credentials ---
   const { email, password } = req.body;
 
@@ -113,11 +119,15 @@ const loginUser = asyncHandler(async (req, res) => {
   // never be able to verify the password!
   const user = await User.findOne({ email }).select("+password");
 
+  console.log('User found:', !!user); // Debug log
+
   // --- STEP 4: Check if user exists AND password matches ---
   // We do both checks together to prevent "user enumeration" attacks.
   // If we said "user not found" separately from "wrong password,"
   // an attacker could figure out which emails are registered.
   if (user && (await user.matchPassword(password))) {
+    console.log('Login successful for user:', user._id); // Debug log
+
     // Password matched! Generate token and send success
     const token = generateToken(user._id);
 
@@ -137,6 +147,8 @@ const loginUser = asyncHandler(async (req, res) => {
       token: token,
     });
   } else {
+    console.log('Login failed: invalid credentials'); // Debug log
+
     // Generic error — doesn't reveal whether email or password was wrong
     // 401 = Unauthorized — credentials are invalid
     res.status(401);
