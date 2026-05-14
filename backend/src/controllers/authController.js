@@ -70,15 +70,15 @@ const registerUser = asyncHandler(async (req, res) => {
     // Generate JWT token using the utility we built
     const token = generateToken(user._id);
 
-    // Set the token as an HTTP-only cookie
-    // HTTP-only means JavaScript can't read it (protection against XSS attacks)
-    res.cookie("token", token, {
+    const cookieOptions = {
       httpOnly: true,       // Browser JS cannot access this cookie
       secure: process.env.NODE_ENV === "production", // HTTPS only in production
-      sameSite: "strict",   // Cookie only sent for same-site requests
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       // 7 days × 24 hours × 60 minutes × 60 seconds × 1000 ms
-    });
+    };
+
+    res.cookie("token", token, cookieOptions);
 
     // 201 = Created — a new resource was successfully made
     res.status(201).json({
@@ -131,12 +131,14 @@ const loginUser = asyncHandler(async (req, res) => {
     // Password matched! Generate token and send success
     const token = generateToken(user._id);
 
-    res.cookie("token", token, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    };
+
+    res.cookie("token", token, cookieOptions);
 
     // 200 = OK — standard success response
     res.status(200).json({
