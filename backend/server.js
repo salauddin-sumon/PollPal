@@ -29,13 +29,30 @@ const app = express();
 // In production: allow Vercel deployments
 const isProduction = process.env.NODE_ENV === "production";
 
-const allowedOrigins = [
-  "http://localhost:5173",  // Development
-  "http://localhost:3000",  // Alternative dev
-  process.env.FRONTEND_URL,  // Production (set in Render)
-].filter(Boolean);  // Remove undefined values
+if (isProduction) {
+  app.set("trust proxy", 1); // Render / reverse proxy — correct client IP & secure cookies
+}
 
-// In production, also allow common Vercel domains
+const frontendUrls = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const extraCors = (process.env.CORS_EXTRA_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  ...frontendUrls,
+  ...extraCors,
+];
+
+// In production, also allow common Vercel domains (optional; prefer FRONTEND_URL)
 if (isProduction) {
   allowedOrigins.push(
     "https://pollpal.vercel.app",
@@ -43,13 +60,21 @@ if (isProduction) {
   );
 }
 
+// Any *.vercel.app (production + previews) — names vary (e.g. poll-pal-seven.vercel.app)
+const vercelOriginRe =
+  /^https:\/\/[a-z0-9][a-z0-9-]*(?:-[a-z0-9]+)*\.vercel\.app$/i;
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // In development, allow all localhost origins
-    if (!isProduction && origin.startsWith('http://localhost')) {
+    // In development, allow localhost and 127.0.0.1 on any port (Vite port may vary)
+    if (
+      !isProduction &&
+      origin &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+    ) {
       return callback(null, true);
     }
 
@@ -58,8 +83,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow Vercel preview deployments (pollpal-*.vercel.app)
-    if (isProduction && origin && origin.match(/^https:\/\/pollpal-.*\.vercel\.app$/)) {
+    if (isProduction && origin && vercelOriginRe.test(origin)) {
       return callback(null, true);
     }
 

@@ -5,7 +5,7 @@
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../utils/api";
+import api, { getApiErrorMessage } from "../utils/api";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -53,9 +53,7 @@ function LoginPage() {
       navigate("/");
 
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again."
-      );
+      setError(getApiErrorMessage(err, "Login failed. Please try again."));
     } finally {
       setLoading(false);
     }

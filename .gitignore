@@ -1,0 +1,6 @@
+# Root (e.g. npm run dev with concurrently)
+node_modules
+
+# Secrets — never commit (tracked *.example files stay allowed)
+.env
+.env.local

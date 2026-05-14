@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),  // Enables Tailwind CSS processing
   ],
+  server: {
+    // Same-origin /api in dev → no CORS issues; backend still runs on :5000
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+      },
+    },
+  },
 })

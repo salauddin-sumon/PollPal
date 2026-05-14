@@ -5,7 +5,7 @@
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../utils/api";
+import api, { getApiErrorMessage } from "../utils/api";
 
 function RegisterPage() {
   // Navigation hook for redirecting after registration
@@ -90,7 +90,7 @@ function RegisterPage() {
       // err.response.data.message contains the error from our backend
       // If the backend is down, show a generic message
       setError(
-        err.response?.data?.message || "Registration failed. Please try again."
+        getApiErrorMessage(err, "Registration failed. Please try again.")
       );
     } finally {
       setLoading(false);

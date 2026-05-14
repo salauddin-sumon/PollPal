@@ -15,10 +15,9 @@ const connectDB = async () => {
     // conn.connection.host shows which server we connected to
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    // If connection fails, log the error and exit the process
-    // process.exit(1) tells Node "the program ended with a failure"
     console.error(`❌ Error: ${error.message}`);
-    process.exit(1);
+    // Re-throw so server.js can start without DB (dev) or handle startup failure
+    throw error;
   }
 };
 
